@@ -33,7 +33,25 @@
       </el-form-item>
 
       <!-- 讲师头像：TODO -->
+      <el-form-item label="讲师头像">
 
+        <!---头像预览--->
+        <pan-thumb :image="teacher.avatar"/>
+        <!---上传按钮--->
+        <el-button type="primary" icon="upload" style="position: absolute;bottom: 15px;margin-left: 40px;" @click="imagecropperShow=true">上传头像
+        </el-button>
+        <!---上传组件--->
+        <image-cropper
+          v-show="imagecropperShow"
+          :width="300"
+          :height="300"
+          :key="imagecropperKey"
+          :field="'file'"
+          url="http://localhost:8120/admin/oss/file/upload?module=avatar"
+          lang-type="zh"
+          @close="close"
+          @crop-upload-success="cropSuccess"/>
+      </el-form-item>
       <el-form-item>
         <el-button :disabled="saveBtnDisabled" type="primary" @click="saveOrUpdate">保存</el-button>
       </el-form-item>
@@ -43,12 +61,16 @@
 
 <script>
 import teacherApi from '@/api/edu/teacher'
+import ImageCropper from '@/components/ImageCropper'
+import PanThumb from '@/components/PanThumb'
 export default {
-
+  components: { ImageCropper, PanThumb },
   data() {
     return {
       saveBtnDisabled: false,
-      teacher: {}
+      teacher: {},
+      imagecropperKey: 0, // 防止组件重用
+      imagecropperShow: false
     }
   },
   watch: {
@@ -71,7 +93,8 @@ export default {
       } else {
         this.teacher = {
           sort: 10,
-          level: 1
+          level: 1,
+          avatar: 'https://online-teacher-file-190805.oss-cn-beijing.aliyuncs.com/avatar/default.jpg'
         }
       }
     },
@@ -110,6 +133,19 @@ export default {
         })
         this.$router.push({ path: '/edu/teacher' })
       })
+    },
+    cropSuccess(resData) {
+      console.log('resData', resData)
+      // 讲师头像回显
+      this.teacher.avatar = resData.url
+      // 关闭上传组件
+      this.imagecropperShow = false
+      this.imagecropperKey++
+    },
+    // 关闭上传组件
+    close() {
+      this.imagecropperShow = false
+      this.imagecropperKey++
     }
   }
 }
