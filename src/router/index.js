@@ -92,6 +92,78 @@ export const constantRouterMap = [
         name: 'EduSubjectImport',
         component: () => import('@/views/edu/subject/import'),
         meta: { title: '导入课程分类' }
+      },
+      {
+        path: 'demo1',
+        name: 'EduSubjectDemo1',
+        component: () => import('@/views/edu/subject/demo1'),
+        meta: { title: '实例' }
+      },
+      {
+        path: 'demo11',
+        name: 'EduSubjectDemo11',
+        component: () => import('@/views/edu/subject/demo11'),
+        meta: { title: '方案1-函数' }
+      },
+      {
+        path: 'demo12',
+        name: 'EduSubjectDemo12',
+        component: () => import('@/views/edu/subject/demo12'),
+        meta: { title: '方案2-计算属性' }
+      },
+      {
+        path: 'demo1vs',
+        name: 'EduSubjectDemo1vs',
+        component: () => import('@/views/edu/subject/demo1vs'),
+        meta: { title: '函数VS计算属性' }
+      },
+      {
+        path: 'demo13',
+        name: 'EduSubjectDemo13',
+        component: () => import('@/views/edu/subject/demo13'),
+        meta: { title: '方法3-监听器' }
+      }
+    ]
+  }, // 课程管理
+  {
+    path: '/edu/course',
+    component: Layout,
+    redirect: '/edu/course/list',
+    name: 'Course',
+    meta: { title: '课程管理', icon: 'form' },
+    children: [
+      {
+        path: 'list',
+        name: 'EduCourseList',
+        component: () => import('@/views/edu/course/list'),
+        meta: { title: '课程列表' }
+      },
+      {
+        path: 'info',
+        name: 'EduCourseInfo',
+        component: () => import('@/views/edu/course/info'),
+        meta: { title: '发布课程' }
+      },
+      {
+        path: 'info/:id',
+        name: 'EduCourseInfoEdit',
+        component: () => import('@/views/edu/course/info'),
+        meta: { title: '编辑课程基本信息', noCache: true },
+        hidden: true
+      },
+      {
+        path: 'chapter/:id',
+        name: 'EduCourseChapterEdit',
+        component: () => import('@/views/edu/course/chapter'),
+        meta: { title: '编辑课程大纲', noCache: true },
+        hidden: true
+      },
+      {
+        path: 'publish/:id',
+        name: 'EduCoursePublishEdit',
+        component: () => import('@/views/edu/course/publish'),
+        meta: { title: '发布课程', noCache: true },
+        hidden: true
       }
     ]
   },
