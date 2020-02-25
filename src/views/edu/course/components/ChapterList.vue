@@ -13,8 +13,8 @@
         <p>
           {{ chapter.title }}
           <span class="acts">
-            <el-button type="text">添加课时</el-button>
-            <el-button type="text">编辑章节</el-button>
+            <el-button type="text" @click="addVideo(chapter.id)">添加课时</el-button>
+            <el-button type="text" @click="editChapter(chapter.id)">编辑章节</el-button>
             <el-button type="text" @click="removeChapterById(chapter.id)">删除章节</el-button>
           </span>
         </p>
@@ -30,8 +30,8 @@
                   {{ '尚未上传视频' }}
                 </el-tag>
                 <el-tag v-if="video.free" size="mini" type="success">{{ '免费观看' }}</el-tag>
-                <el-button type="text">编辑课时</el-button>
-                <el-button type="text">删除课时</el-button>
+                <el-button type="text" @click="editVideo(chapter.id, video.id)">编辑课时</el-button>
+                <el-button type="text" @click="removeVideo(video.id)">删除课时</el-button>
               </span>
             </p>
           </li>
@@ -40,8 +40,12 @@
     </ul>
 
     <!-- 章节表单对话框 TODO -->
-    <chapter-form ref="chapterForm" :course-id="courseId" />
-    <!-- 课时表单对话框 TODO -->
+    <chapter-form ref="chapterForm" :course-id="courseId" @onSaveSuccess="init" />
+    <!-- 课时表单对话框 -->
+    <video-form
+      ref="videoForm"
+      :course-id="courseId"
+      @onSaveSuccess="init" />
 
   </div>
 </template>
@@ -49,10 +53,11 @@
 <script>
 import chapterApi from '@/api/edu/chapter'
 import ChapterForm from '@/views/edu/course/components/ChapterForm'
+import VideoForm from '@/views/edu/course/components/VideoForm'
+import videoApi from '@/api/edu/video'
 
 export default {
-  components: { ChapterForm },
-
+  components: { ChapterForm, VideoForm },
   // 父组件向子组件传值
   props: {
     courseId: {
@@ -99,8 +104,39 @@ export default {
         }
       })
     },
+    editChapter(chapterId) {
+      this.$refs.chapterForm.open(chapterId)
+    },
     addChapter() {
       this.$refs.chapterForm.open()
+    },
+    addVideo(chapterId) {
+      this.$refs.videoForm.open(chapterId)
+    },
+    editVideo(chapterId, videoId) {
+      this.$refs.videoForm.open(chapterId, videoId)
+    },
+    removeVideo(videoId) {
+      this.$confirm('此操作将永久删除该记录, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        return videoApi.removeById(videoId)
+      }).then(() => {
+        this.init()// 刷新列表
+        this.$message({
+          type: 'success',
+          message: '删除成功!'
+        })
+      }).catch((response) => { // 失败
+        if (response === 'cancel') {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          })
+        }
+      })
     }
   }
 }

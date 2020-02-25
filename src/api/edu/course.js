@@ -35,5 +35,18 @@ export default {
       method: 'get',
       params: searchObj
     })
+  },
+  getCoursePublishInfoById(id) {
+    return request({
+      url: `${apiPath}/course-publish-info/${id}`,
+      method: 'get'
+    })
+  },
+
+  publishCourse(id) {
+    return request({
+      url: `${apiPath}/publish-course/${id}`,
+      method: 'put'
+    })
   }
 }

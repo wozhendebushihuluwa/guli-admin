@@ -16,6 +16,8 @@
   </el-dialog>
 </template>
 <script>
+
+import chapterApi from '@/api/edu/chapter'
 export default {
 
   // 父组件向子组件传值
@@ -38,12 +40,19 @@ export default {
   },
 
   methods: {
-    open() {
+    open(chapterId) {
       this.dialogVisible = true
+      if (chapterId) {
+        chapterApi.getById(chapterId).then(response => {
+          this.chapter = response.data.item
+        })
+      }
     },
 
     close() {
       this.dialogVisible = false
+      // 重置表单
+      this.resetForm()
     },
 
     saveOrUpdate() {
@@ -55,11 +64,38 @@ export default {
     },
 
     save() {
-
+      console.log(this.chapter)
+      this.chapter.courseId = this.courseId
+      chapterApi.save(this.chapter).then(response => {
+        this.$message({
+          type: 'success',
+          message: '保存成功!'
+        })
+        // 关闭组件
+        this.close()
+        // 调用父组件监听函数
+        this.$emit('onSaveSuccess')
+      })
     },
 
     update() {
-
+      chapterApi.updateById(this.chapter).then(response => {
+        this.$message({
+          type: 'success',
+          message: '更新成功'
+        })
+        // 关闭组件
+        this.close()
+        // 调用父组件监听函数
+        this.$emit('onSaveSuccess')
+      })
+    },
+    resetForm() {
+      this.chapter = {
+        id: null,
+        title: '',
+        sort: 0
+      }
     }
   }
 }
