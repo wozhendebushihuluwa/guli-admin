@@ -17,17 +17,65 @@
         <el-input v-model="courseInfo.title" placeholder=" 示例：机器学习项目课：从基础到搭建项目视频课程。专业名称注意大小写"/>
       </el-form-item>
 
-      <!-- 所属分类 TODO -->
+      <!-- 所属分类  -->
+      <!-----一级联动--->
+      <el-form-item label="课程类别" >
+        <el-select
+          v-model="courseInfo.subjectParentId"
+          place-holder="请选择"
+          @change="subjectLevelOneChange">
+          <el-option
+            v-for="subject in subjectNestedList"
+            :label="subject.title"
+            :value="subject.id"
+            :key="subject.id"
+          />
+        </el-select>
+        <!-----二级联动--->
+        <el-select
+          v-model="courseInfo.subjectId"
+          place-holder="请选择"
+        >
+          <el-option
+            v-for="subject in subSubjectList"
+            :label="subject.title"
+            :value="subject.id"
+            :key="subject.id"
+          />
+        </el-select>
+      </el-form-item>
 
-      <!-- 课程讲师 TODO -->
+      <!-- 课程讲师  -->
+      <el-form-item label="课程讲师" >
+        <el-select v-model="courseInfo.teacherId" place-holder="请选择">
+          <el-option
+            v-for="teacher in teacherList"
+            :label="teacher.name"
+            :value="teacher.id"
+            :key="teacher.id"/>
+        </el-select>
+      </el-form-item>
 
       <el-form-item label="总课时">
         <el-input-number :min="0" v-model="courseInfo.lessonNum" controls-position="right" placeholder="请填写课程的总课时数"/>
       </el-form-item>
 
-      <!-- 课程简介 TODO -->
+      <!-- 课程简介-->
+      <el-form-item label="课程简介">
+        <tinymce :height="300" v-model="courseInfo.description"/>
+      </el-form-item>
 
-      <!-- 课程封面 TODO -->
+      <!-- 课程封面-->
+      <el-form-item label="课程封面">
+        <el-upload
+          :show-file-list="false"
+          :on-success="handleCoverSuccess"
+          :before-upload="beforeCoverUpload"
+          action="http://127.0.0.1:8120/admin/oss/file/upload?module=cover"
+          class="avatar-uploader">
+          <img :src="courseInfo.cover">
+        </el-upload>
+      </el-form-item>
 
       <el-form-item label="课程价格">
         <el-input-number :min="0" v-model="courseInfo.price" controls-position="right" placeholder="免费课程请设置为0元"/> 元
@@ -41,35 +89,119 @@
 </template>
 <script>
 import courseApi from '@/api/edu/course'
+import teacherApi from '@/api/edu/teacher'
+import subjectApi from '@/api/edu/subject'
+import Tinymce from '@/components/Tinymce'
 export default {
-
+  components: { Tinymce },
   data() {
     return {
       active: 0,
       saveBtnDisabled: false, // 保存按钮是否禁用
       courseInfo: {// 表单数据
         price: 0,
-        lessonNum: 0,
+        lessonNum: 0
         // 以下解决表单数据不全时insert语句非空校验
-        teacherId: '',
-        subjectId: '',
-        subjectParentId: '',
-        cover: '',
-        description: ''
-      }
+        // teacherId: '',
+        // subjectId: '', // 二级分类id
+        // subjectParentId: '', // 一级分类id
+        // cover: process.env.OSS_PATH + '/cover/default.gif',
+        // description: ''
+      },
+      teacherList: [],
+      subjectNestedList: [], // 一级分类列表
+      subSubjectList: []// 二级分类列表
     }
   },
-
+  watch: {
+    $route(to, from) {
+      console.log('watch $route')
+      this.init()
+    }
+  },
   created() {
     console.log('info created')
+    // 初始化讲师列表
+    this.init()
   },
 
   methods: {
+    init() {
+      if (this.$route.params && this.$route.params.id) { // 回显
+        // 根据id获取课程基本信息
+        this.fetchCourseInfoById(this.$route.params.id)
+      } else {
+        this.courseInfo = {// 表单数据
+          price: 0,
+          lessonNum: 0,
+          // 以下解决表单数据不全时insert语句非空校验
+          teacherId: '',
+          subjectId: '', // 二级分类id
+          subjectParentId: '', // 一级分类id
+          cover: process.env.OSS_PATH + '/cover/default.gif',
+          description: ''
+        }
+        this.initSubjectList()
+      }
+      this.initTeacherList()
+    },
+    fetchCourseInfoById(id) {
+      courseApi.getCourseInfoById(id).then(response => {
+        this.courseInfo = response.data.item
 
+        // 获取一级分类列表
+        subjectApi.getNestedList().then(response => {
+          this.subjectNestedList = response.data.items
+          this.subjectNestedList.forEach(subject => {
+            if (this.courseInfo.subjectParentId === subject.id) {
+              this.subSubjectList = subject.children
+            }
+          })
+        })
+        // 根据一级分类显示二级分类列表
+      })
+    },
+    initTeacherList() {
+      teacherApi.list().then(response => {
+        this.teacherList = response.data.items
+      })
+    },
+    initSubjectList() {
+      subjectApi.getNestedList().then(response => {
+        this.subjectNestedList = response.data.items
+      })
+    },
+    subjectLevelOneChange(value) {
+      this.subjectNestedList.forEach(subjectNested => {
+        if (subjectNested.id === value) {
+          this.courseInfo.subjectId = ''
+          this.subSubjectList = subjectNested.children
+        }
+      })
+    },
+    beforeCoverUpload(file) {
+      const isJPG = file.type === 'image/jpeg'
+      const isLt2M = file.size / 1024 / 1024 < 2
+
+      if (!isJPG) {
+        this.$message.error('上传课程封面只能是 JPG 格式!')
+      }
+      if (!isLt2M) {
+        this.$message.error('上传课程封面大小不能超过 2MB!')
+      }
+      return isJPG && isLt2M
+    },
+    handleCoverSuccess(response) {
+      this.courseInfo.cover = response.data.url
+    },
     next() {
       console.log('next')
       this.saveBtnDisabled = true
-      this.saveData()
+      if (!this.courseInfo.id) {
+        this.saveData()
+      } else {
+        this.updateData()
+      }
     },
 
     // 保存
@@ -84,8 +216,21 @@ export default {
     },
 
     updateData() {
-      this.$router.push({ path: '/edu/course/chapter/1' })
+      this.saveBtnDisabled = true
+      courseApi.updateCourseInfoById(this.courseInfo).then(response => {
+        this.$message({
+          type: 'success',
+          message: '更新成功'
+        })
+        this.$router.push({ path: '/edu/course/chapter/' + this.courseInfo.id })
+      })
     }
   }
 }
 </script>
+<style scoped>
+.tinymce-container {
+  position: relative;
+  line-height: normal;
+}
+</style>
