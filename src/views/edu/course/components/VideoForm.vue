@@ -15,12 +15,39 @@
         </el-radio-group>
       </el-form-item>
       <el-form-item label="上传视频">
-        <!-- 上传视频 TODO -->
+
+        <!-- 上传视频 -->
+        <el-upload
+          ref="upload"
+          :auto-upload="false"
+          :on-success="fileUploadSuccess"
+          :on-error="fileUploadError"
+          :on-exceed="fileUploadExceed"
+          :file-list="fileList"
+          :limit="1"
+          action="http://127.0.0.1:8130/admin/vod/video/upload">
+          <el-button slot="trigger" size="small" type="primary">选择视频</el-button>
+          <el-tooltip placement="right-end">
+            <div slot="content">最大支持1G，<br>
+              支持3GP、ASF、AVI、DAT、DV、FLV、F4V、<br>
+              GIF、M2T、M4V、MJ2、MJPEG、MKV、MOV、MP4、<br>
+              MPE、MPG、MPEG、MTS、OGG、QT、RM、RMVB、<br>
+              SWF、TS、VOB、WMV、WEBM 等视频格式上传</div>
+            <i class="el-icon-question"/>
+          </el-tooltip>
+          <el-button
+            :disabled="uploadBtnDisabled"
+            style="margin-left: 10px;"
+            size="small"
+            type="success"
+            @click="submitUpload()">上传</el-button>
+        </el-upload>
+
       </el-form-item>
     </el-form>
     <div slot="footer" class="dialog-footer">
       <el-button @click="close">取 消</el-button>
-      <el-button type="primary" @click="saveOrUpdate">确 定</el-button>
+      <el-button :disabled="uploadBtnDisabled" type="primary" @click="saveOrUpdate">确 定</el-button>
     </div>
   </el-dialog>
 </template>
@@ -48,17 +75,45 @@ export default {
         free: false,
         videoSourceId: '', // 阿里云视频id
         videoOriginalName: '' // 视频名称
-      }
+      },
+      fileList: [], // 上传文件列表
+      uploadBtnDisabled: false
     }
   },
 
   methods: {
+    submitUpload() {
+      this.uploadBtnDisabled = true
+      this.$refs.upload.submit() // 提交上传请求
+    },
+    // 视频上传成功的回调
+    fileUploadSuccess(response, file, fileList) {
+      this.uploadBtnDisabled = false
+      this.video.videoSourceId = response.data.videoId
+      this.video.videoOriginalName = file.name
+    },
+    // 失败回调
+    fileUploadError() {
+      this.uploadBtnDisabled = false
+      this.$message({
+        type: 'error',
+        message: '上传失败'
+      })
+    },
+    // 上传多于一个视频
+    fileUploadExceed(files, fileList) {
+      this.$message.warning('想要重新上传视频，请先删除列表中的视频')
+    },
     open(chapterId, videoId) {
       this.dialogVisible = true
       this.video.chapterId = chapterId
       if (videoId) {
         videoApi.getById(videoId).then(response => {
           this.video = response.data.item
+          // 回显
+          if (this.video.videoSourceId && this.video.videoOriginalName) {
+            this.fileList = [{ 'name': this.video.videoOriginalName }]
+          }
         })
       }
     },
@@ -109,6 +164,7 @@ export default {
         videoSourceId: '',
         videoOriginalName: ''
       }
+      this.fileList = []
     }
   }
 }
